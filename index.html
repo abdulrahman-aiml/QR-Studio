@@ -25,14 +25,23 @@
     ════════════════════════════════ */
     html, body { height: 100%; overflow: hidden; }
 
+    /* ── Animated canvas background ── */
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
     body {
       display: flex;
       flex-direction: column;
-      background: var(--bg);
+      background: transparent;
       font-family: 'Inter', system-ui, sans-serif;
       color: var(--text);
       padding: 14px 20px;
-      background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(108,99,255,0.13) 0%, transparent 70%);
+      position: relative;
+      z-index: 1;
     }
 
     /* ── Header ── */
@@ -72,8 +81,10 @@
     }
 
     .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: rgba(14,16,24,0.72);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,0.06);
       border-radius: 18px;
       padding: 20px 22px;
       overflow-y: auto;
@@ -86,8 +97,10 @@
     .card::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
 
     .output-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: rgba(14,16,24,0.72);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,0.06);
       border-radius: 18px;
       padding: 20px;
       display: flex;
@@ -98,6 +111,7 @@
       justify-content: center;
       overflow: hidden;
     }
+    .output-card > #styles-section { flex: 1; min-height: 0; }
 
     /* Mobile bottom nav — hidden on desktop */
     .mobile-nav { display: none; }
@@ -114,7 +128,9 @@
         padding: 12px 16px 10px;
         margin-bottom: 0;
         flex-shrink: 0;
-        background: var(--surface);
+        background: rgba(14,16,24,0.75);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         border-bottom: 1px solid var(--border);
       }
       .tagline { display: none; }
@@ -160,8 +176,8 @@
         transform: translateX(100%);
         opacity: 0;
         pointer-events: none;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
+        overflow: hidden;
+        padding: 14px 12px;
       }
       .output-card.mobile-active {
         transform: translateX(0);
@@ -169,12 +185,28 @@
         pointer-events: auto;
       }
 
+      /* Fit main QR preview on small screens */
+      #qr-main-preview {
+        max-width: min(220px, 55vw);
+        max-height: min(220px, 55vw);
+        border-radius: 12px;
+      }
+
+      /* Thumbnail strip: smaller thumbs on mobile */
+      .style-thumb canvas { width: 56px !important; height: 56px !important; }
+
+      /* Download buttons: stack vertically if narrow */
+      .dl-row { flex-direction: column; gap: 8px; width: 100%; }
+      .btn-dl { width: 100%; justify-content: center; }
+
       /* Bottom nav */
       .mobile-nav {
         display: flex;
         flex-shrink: 0;
-        background: var(--surface);
-        border-top: 1px solid var(--border);
+        background: rgba(14,16,24,0.80);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-top: 1px solid rgba(255,255,255,0.06);
         height: 62px;
         padding-bottom: env(safe-area-inset-bottom);
       }
@@ -210,10 +242,10 @@
       .btn-generate { position: sticky; bottom: 0; z-index: 2; margin-top: 12px; }
 
       /* Tighten mode grid on mobile */
-      .mode-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
-      .mode-btn { padding: 8px 4px; }
-      .mode-btn .mode-icon { font-size: 1.2rem; }
-      .mode-btn .mode-label { font-size: 0.65rem; }
+      .mode-grid { grid-template-columns: repeat(4, 1fr); gap: 5px; }
+      .mode-btn { padding: 7px 3px; }
+      .mode-btn .mode-icon { font-size: 1rem; }
+      .mode-btn .mode-label { font-size: 0.58rem; }
 
       /* QR output badge padding on mobile */
       .qr-type-badge { margin-bottom: 6px; }
@@ -239,15 +271,15 @@
 
     .mode-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
       margin-bottom: 14px;
     }
     .mode-btn {
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 9px;
-      padding: 7px 4px;
+      padding: 7px 3px;
       cursor: pointer;
       text-align: center;
       transition: all 0.18s;
@@ -260,8 +292,8 @@
       border-color: var(--accent);
       color: var(--accent2);
     }
-    .mode-btn .mode-icon { font-size: 1.15rem; display: block; margin-bottom: 2px; }
-    .mode-btn .mode-label { font-size: 0.65rem; font-weight: 500; }
+    .mode-btn .mode-icon { font-size: 1.05rem; display: block; margin-bottom: 2px; }
+    .mode-btn .mode-label { font-size: 0.6rem; font-weight: 500; line-height: 1.2; }
 
     .panel { display: none; }
     .panel.active { display: block; }
@@ -296,6 +328,7 @@
       box-shadow: 0 0 0 3px rgba(108,99,255,0.12);
     }
     input::placeholder, textarea::placeholder { color: #2e3350; }
+    input[type="datetime-local"] { color-scheme: dark; }
     textarea { resize: vertical; min-height: 70px; }
     select {
       cursor: pointer; appearance: none;
@@ -382,14 +415,111 @@
     .divider { height: 1px; background: var(--border); margin: 14px 0; }
 
     @keyframes popIn {
-      0% { transform: scale(0.85); opacity: 0; }
-      60% { transform: scale(1.04); }
-      100% { transform: scale(1); opacity: 1; }
+      0%   { transform: scale(0.85); opacity: 0; }
+      60%  { transform: scale(1.04); }
+      100% { transform: scale(1);    opacity: 1; }
     }
-    .qr-wrap.animate { animation: popIn 0.35s cubic-bezier(.34,1.56,.64,1) forwards; }
+    #fancy-canvas.animate { animation: popIn 0.35s cubic-bezier(.34,1.56,.64,1) forwards; }
+
+    /* ── Output layout ── */
+    .output-card { flex-direction: column; justify-content: center; padding: 16px 14px; gap: 0; }
+
+    /* ── Styles section: main preview + strip ── */
+    #styles-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      gap: 10px;
+    }
+
+    .style-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      flex-shrink: 0;
+    }
+    .style-section-title {
+      font-size: 0.62rem; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--muted);
+    }
+
+    /* Big main QR preview */
+    .qr-main-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+    }
+    #qr-main-preview {
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    /* Horizontal thumbnail strip */
+    .style-strip {
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      overflow-x: auto;
+      width: 100%;
+      flex-shrink: 0;
+      padding: 4px 2px 6px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border2) transparent;
+    }
+    .style-strip::-webkit-scrollbar { height: 3px; }
+    .style-strip::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+    .style-thumb {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      border-radius: 12px;
+      border: 2px solid transparent;
+      padding: 4px;
+      transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+    }
+    .style-thumb:hover { transform: translateY(-2px); }
+    .style-thumb.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(108,99,255,0.25);
+    }
+    .style-thumb canvas {
+      display: block;
+      border-radius: 8px;
+    }
+    .style-thumb-label {
+      font-size: 0.58rem; font-weight: 600; letter-spacing: 0.04em;
+      text-transform: uppercase; color: var(--muted); white-space: nowrap;
+    }
+    .style-thumb.selected .style-thumb-label { color: var(--accent2); }
+
+    @keyframes popIn {
+      0%   { transform: scale(0.88); opacity: 0; }
+      65%  { transform: scale(1.03); }
+      100% { transform: scale(1);    opacity: 1; }
+    }
+    .style-thumb { animation: popIn 0.3s cubic-bezier(.34,1.56,.64,1) both; }
+    .style-thumb:nth-child(1) { animation-delay: 0ms; }
+    .style-thumb:nth-child(2) { animation-delay: 40ms; }
+    .style-thumb:nth-child(3) { animation-delay: 80ms; }
+    .style-thumb:nth-child(4) { animation-delay: 120ms; }
+    .style-thumb:nth-child(5) { animation-delay: 160ms; }
+    .style-thumb:nth-child(6) { animation-delay: 200ms; }
   </style>
 </head>
 <body>
+<canvas id="bg-canvas"></canvas>
 
 <header>
   <div class="logo">
@@ -423,6 +553,24 @@
       </button>
       <button class="mode-btn" data-mode="vcard">
         <span class="mode-icon">👤</span><span class="mode-label">Contact</span>
+      </button>
+      <button class="mode-btn" data-mode="phone">
+        <span class="mode-icon">📞</span><span class="mode-label">Phone</span>
+      </button>
+      <button class="mode-btn" data-mode="location">
+        <span class="mode-icon">📍</span><span class="mode-label">Location</span>
+      </button>
+      <button class="mode-btn" data-mode="event">
+        <span class="mode-icon">📅</span><span class="mode-label">Event</span>
+      </button>
+      <button class="mode-btn" data-mode="whatsapp">
+        <span class="mode-icon">💚</span><span class="mode-label">WhatsApp</span>
+      </button>
+      <button class="mode-btn" data-mode="social">
+        <span class="mode-icon">🔗</span><span class="mode-label">Social</span>
+      </button>
+      <button class="mode-btn" data-mode="appstore">
+        <span class="mode-icon">📱</span><span class="mode-label">App Store</span>
       </button>
     </div>
 
@@ -562,6 +710,127 @@
       </div>
     </div>
 
+    <!-- PHONE -->
+    <div class="panel" id="panel-phone">
+      <div class="field">
+        <label>Phone Number</label>
+        <input type="tel" id="phone-number" placeholder="+1 555 000 0000" />
+      </div>
+      <div class="field">
+        <label>Action</label>
+        <div class="seg-control" id="phone-action">
+          <button class="seg-btn active" data-val="call">Call</button>
+          <button class="seg-btn" data-val="facetime">FaceTime</button>
+          <button class="seg-btn" data-val="skype">Skype</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOCATION -->
+    <div class="panel" id="panel-location">
+      <div class="field-row">
+        <div class="field">
+          <label>Latitude</label>
+          <input type="text" id="loc-lat" placeholder="40.7128" />
+        </div>
+        <div class="field">
+          <label>Longitude</label>
+          <input type="text" id="loc-lng" placeholder="-74.0060" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Label (optional)</label>
+        <input type="text" id="loc-label" placeholder="New York City" />
+      </div>
+      <div class="field">
+        <label>Map Service</label>
+        <select id="loc-service">
+          <option value="geo">Standard (geo:)</option>
+          <option value="gmaps">Google Maps</option>
+          <option value="apple">Apple Maps</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- CALENDAR EVENT -->
+    <div class="panel" id="panel-event">
+      <div class="field">
+        <label>Event Title</label>
+        <input type="text" id="ev-title" placeholder="Team Meeting" />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Start</label>
+          <input type="datetime-local" id="ev-start" />
+        </div>
+        <div class="field">
+          <label>End</label>
+          <input type="datetime-local" id="ev-end" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Location</label>
+        <input type="text" id="ev-location" placeholder="Conference Room A" />
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea id="ev-desc" placeholder="Event details…" style="min-height:50px;"></textarea>
+      </div>
+    </div>
+
+    <!-- WHATSAPP -->
+    <div class="panel" id="panel-whatsapp">
+      <div class="field">
+        <label>Phone Number (with country code)</label>
+        <input type="tel" id="wa-phone" placeholder="+1 555 000 0000" />
+      </div>
+      <div class="field">
+        <label>Pre-filled Message (optional)</label>
+        <textarea id="wa-message" placeholder="Hello! 👋" style="min-height:60px;"></textarea>
+      </div>
+    </div>
+
+    <!-- SOCIAL MEDIA -->
+    <div class="panel" id="panel-social">
+      <div class="field">
+        <label>Platform</label>
+        <select id="social-platform">
+          <option value="instagram">Instagram</option>
+          <option value="twitter">X (Twitter)</option>
+          <option value="linkedin">LinkedIn</option>
+          <option value="youtube">YouTube</option>
+          <option value="tiktok">TikTok</option>
+          <option value="github">GitHub</option>
+          <option value="facebook">Facebook</option>
+          <option value="custom">Custom URL</option>
+        </select>
+      </div>
+      <div class="field">
+        <label id="social-input-label">Username or Profile URL</label>
+        <input type="text" id="social-handle" placeholder="@username" />
+      </div>
+    </div>
+
+    <!-- APP STORE -->
+    <div class="panel" id="panel-appstore">
+      <div class="field">
+        <label>Platform</label>
+        <div class="seg-control" id="app-platform">
+          <button class="seg-btn active" data-val="ios">App Store</button>
+          <button class="seg-btn" data-val="android">Play Store</button>
+          <button class="seg-btn" data-val="both">Smart Link</button>
+        </div>
+      </div>
+      <div class="field" id="app-ios-field">
+        <label>App Store URL or App ID</label>
+        <input type="text" id="app-ios" placeholder="https://apps.apple.com/app/id123456" />
+      </div>
+      <div class="field" id="app-android-field" style="display:none;">
+        <label>Play Store URL or Package Name</label>
+        <input type="text" id="app-android" placeholder="com.example.app" />
+      </div>
+    </div>
+
     <div class="divider"></div>
 
     <p class="section-title">Appearance</p>
@@ -607,23 +876,33 @@
 
   <!-- ── Output column ── -->
   <div class="output-card" id="output-view">
+
     <div class="placeholder-state" id="placeholder">
       <div class="ph-icon">⬜</div>
-      <p>Your QR code will<br/>appear here</p>
+      <p>Generate a QR code to see<br/>style options here</p>
     </div>
 
-    <div class="qr-wrap" id="qr-wrap">
-      <div id="qrcode"></div>
+    <div id="styles-section" style="display:none;">
+      <div class="style-top-row">
+        <p class="style-section-title" style="margin:0;">Pick a style</p>
+        <div class="qr-type-badge" id="type-badge">📝 Text / URL</div>
+      </div>
+
+      <!-- Large main preview of selected style -->
+      <div class="qr-main-wrap">
+        <canvas id="qr-main-preview"></canvas>
+      </div>
+
+      <!-- Horizontal thumbnail strip -->
+      <div class="style-strip" id="style-strip"></div>
+
+      <!-- Download row -->
+      <div class="dl-row" id="dl-row" style="flex-shrink:0;">
+        <button class="btn-dl btn-dl-primary" id="btn-dl-png">⬇ Download PNG</button>
+        <button class="btn-dl btn-dl-secondary" id="btn-dl-copy">Copy image</button>
+      </div>
     </div>
 
-    <div class="qr-meta" id="qr-meta">
-      <div class="qr-type-badge" id="type-badge">📝 Text / URL</div>
-    </div>
-
-    <div class="dl-row" id="dl-row">
-      <button class="btn-dl btn-dl-primary" id="btn-dl-png">⬇ Download PNG</button>
-      <button class="btn-dl btn-dl-secondary" id="btn-dl-copy">Copy image</button>
-    </div>
   </div>
 
 </div>
@@ -644,7 +923,9 @@
 <script>
   let currentMode = 'text';
   let wifiSecurity = 'WPA';
-  let mobileTab = 'form'; // 'form' | 'preview'
+  let phoneAction  = 'call';
+  let appPlatform  = 'ios';
+  let mobileTab    = 'form';
 
   const modeGrid   = document.getElementById('mode-grid');
   const btnGen     = document.getElementById('btn-generate');
@@ -707,6 +988,47 @@
     const passEl = document.getElementById('wifi-pass');
     passEl.disabled = wifiSecurity === 'nopass';
     passEl.style.opacity = wifiSecurity === 'nopass' ? '0.4' : '1';
+  });
+
+  /* ── Phone action ── */
+  document.getElementById('phone-action').addEventListener('click', e => {
+    const btn = e.target.closest('.seg-btn');
+    if (!btn) return;
+    document.querySelectorAll('#phone-action .seg-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    phoneAction = btn.dataset.val;
+  });
+
+  /* ── App platform ── */
+  document.getElementById('app-platform').addEventListener('click', e => {
+    const btn = e.target.closest('.seg-btn');
+    if (!btn) return;
+    document.querySelectorAll('#app-platform .seg-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    appPlatform = btn.dataset.val;
+    document.getElementById('app-ios-field').style.display     = appPlatform !== 'android' ? 'block' : 'none';
+    document.getElementById('app-android-field').style.display = appPlatform !== 'ios'     ? 'block' : 'none';
+  });
+
+  /* ── Social platform label ── */
+  const socialPlatform = document.getElementById('social-platform');
+  const socialHandle   = document.getElementById('social-handle');
+  const socialLabel    = document.getElementById('social-input-label');
+  const socialPrefixes = {
+    instagram: { base: 'https://instagram.com/', label: 'Username', ph: 'username' },
+    twitter:   { base: 'https://x.com/',         label: 'Username', ph: 'username' },
+    linkedin:  { base: 'https://linkedin.com/in/',label: 'Profile slug', ph: 'yourname' },
+    youtube:   { base: 'https://youtube.com/@',  label: 'Channel handle', ph: 'channelname' },
+    tiktok:    { base: 'https://tiktok.com/@',   label: 'Username', ph: 'username' },
+    github:    { base: 'https://github.com/',    label: 'Username', ph: 'username' },
+    facebook:  { base: 'https://facebook.com/',  label: 'Username or page', ph: 'pagename' },
+    custom:    { base: '',                        label: 'Full URL', ph: 'https://example.com' },
+  };
+  socialPlatform.addEventListener('change', () => {
+    const p = socialPrefixes[socialPlatform.value];
+    socialLabel.textContent = p.label;
+    socialHandle.placeholder = p.ph;
+    socialHandle.value = '';
   });
 
   /* ── Payment type ── */
@@ -807,9 +1129,125 @@
         if (url)   text += `\nURL:${url}`;
         return { text: text + '\nEND:VCARD', label: '👤 Contact' };
       }
+      case 'phone': {
+        const num = document.getElementById('phone-number').value.trim().replace(/\s/g, '');
+        if (!num) return null;
+        const schemes = { call: 'tel:', facetime: 'facetime:', skype: 'skype:' };
+        const suffixes = { call: '', facetime: '', skype: '?call' };
+        return { text: schemes[phoneAction] + num + suffixes[phoneAction], label: '📞 Phone' };
+      }
+      case 'location': {
+        const lat = document.getElementById('loc-lat').value.trim();
+        const lng = document.getElementById('loc-lng').value.trim();
+        if (!lat || !lng) return null;
+        const lbl     = document.getElementById('loc-label').value.trim();
+        const service = document.getElementById('loc-service').value;
+        let text;
+        if (service === 'gmaps')
+          text = `https://www.google.com/maps?q=${lat},${lng}${lbl ? '(' + encodeURIComponent(lbl) + ')' : ''}`;
+        else if (service === 'apple')
+          text = `https://maps.apple.com/?ll=${lat},${lng}${lbl ? '&q=' + encodeURIComponent(lbl) : ''}`;
+        else
+          text = `geo:${lat},${lng}${lbl ? '?q=' + encodeURIComponent(lbl) : ''}`;
+        return { text, label: '📍 Location' };
+      }
+      case 'event': {
+        const title = document.getElementById('ev-title').value.trim();
+        if (!title) return null;
+        const fmt = v => v ? v.replace(/[-:T]/g, '').slice(0, 15) + 'Z' : '';
+        const start = fmt(document.getElementById('ev-start').value);
+        const end   = fmt(document.getElementById('ev-end').value);
+        const loc   = document.getElementById('ev-location').value;
+        const desc  = document.getElementById('ev-desc').value;
+        let text = `BEGIN:VEVENT\nSUMMARY:${title}`;
+        if (start) text += `\nDTSTART:${start}`;
+        if (end)   text += `\nDTEND:${end}`;
+        if (loc)   text += `\nLOCATION:${loc}`;
+        if (desc)  text += `\nDESCRIPTION:${desc}`;
+        text += '\nEND:VEVENT';
+        return { text, label: '📅 Event' };
+      }
+      case 'whatsapp': {
+        const num = document.getElementById('wa-phone').value.trim().replace(/[\s+\-()]/g, '');
+        if (!num) return null;
+        const msg = document.getElementById('wa-message').value.trim();
+        return {
+          text: `https://wa.me/${num}${msg ? '?text=' + encodeURIComponent(msg) : ''}`,
+          label: '💚 WhatsApp'
+        };
+      }
+      case 'social': {
+        const handle = document.getElementById('social-handle').value.trim();
+        if (!handle) return null;
+        const p = socialPrefixes[socialPlatform.value];
+        const cleanHandle = handle.replace(/^@/, '').replace(/^https?:\/\/[^/]+\//, '');
+        const url = p.base ? p.base + cleanHandle : handle;
+        return { text: url, label: '🔗 ' + socialPlatform.options[socialPlatform.selectedIndex].text };
+      }
+      case 'appstore': {
+        if (appPlatform === 'ios') {
+          const ios = document.getElementById('app-ios').value.trim();
+          if (!ios) return null;
+          const url = ios.startsWith('http') ? ios : `https://apps.apple.com/app/id${ios}`;
+          return { text: url, label: '📱 App Store' };
+        }
+        if (appPlatform === 'android') {
+          const pkg = document.getElementById('app-android').value.trim();
+          if (!pkg) return null;
+          const url = pkg.startsWith('http') ? pkg : `https://play.google.com/store/apps/details?id=${pkg}`;
+          return { text: url, label: '📱 Play Store' };
+        }
+        /* both — build a smart-link style combined URL using a simple branch-like fallback */
+        const ios = document.getElementById('app-ios').value.trim();
+        const and = document.getElementById('app-android').value.trim();
+        if (!ios && !and) return null;
+        const iosUrl = ios.startsWith('http') ? ios : `https://apps.apple.com/app/id${ios}`;
+        const andUrl = and.startsWith('http') ? and : `https://play.google.com/store/apps/details?id=${and}`;
+        /* Encode both into a simple redirect-aware URL (opens whichever is available) */
+        const text = iosUrl || andUrl;
+        return { text, label: '📱 App (Smart Link)' };
+      }
     }
     return null;
   }
+
+  /* ── Style definitions — each is a complete ready-made look ── */
+  const STYLES = [
+    {
+      id: 'classic', name: 'Classic',
+      bg: '#ffffff', fg1: '#111111', fg2: '#111111',
+      dot: 'square', radius: 0, labelBg: '#111111', labelColor: '#fff',
+    },
+    {
+      id: 'ocean', name: 'Ocean',
+      bg: '#dbeafe', fg1: '#1d4ed8', fg2: '#7c3aed',
+      dot: 'rounded', radius: 16, labelBg: '#1d4ed8', labelColor: '#fff',
+    },
+    {
+      id: 'sunset', name: 'Sunset',
+      bg: '#fff7ed', fg1: '#ea580c', fg2: '#db2777',
+      dot: 'dot', radius: 16, labelBg: '#ea580c', labelColor: '#fff',
+    },
+    {
+      id: 'forest', name: 'Forest',
+      bg: '#dcfce7', fg1: '#15803d', fg2: '#0369a1',
+      dot: 'rounded', radius: 12, labelBg: '#15803d', labelColor: '#fff',
+    },
+    {
+      id: 'midnight', name: 'Midnight',
+      bg: '#0f172a', fg1: '#818cf8', fg2: '#c084fc',
+      dot: 'dot', radius: 18, labelBg: '#1e1b4b', labelColor: '#c4b5fd',
+    },
+    {
+      id: 'neon', name: 'Neon',
+      bg: '#030712', fg1: '#4ade80', fg2: '#22d3ee',
+      dot: 'square', radius: 8, labelBg: '#052e16', labelColor: '#4ade80',
+    },
+  ];
+
+  let selectedStyleId = 'classic';
+  let lastQRMatrix    = null;
+  let lastLabelText   = '';
 
   /* ── Generate ── */
   btnGen.addEventListener('click', generate);
@@ -825,54 +1263,238 @@
       setTimeout(() => { btnGen.textContent = orig; }, 2000);
       return;
     }
-
-    const size = parseInt(sizeSelect.value, 10);
     const ecMap = { L: QRCode.CorrectLevel.L, M: QRCode.CorrectLevel.M, Q: QRCode.CorrectLevel.Q, H: QRCode.CorrectLevel.H };
 
-    qrcodeDiv.innerHTML = '';
-    qrWrap.classList.remove('animate');
+    const hidden = document.createElement('div');
+    hidden.style.cssText = 'position:absolute;left:-9999px;top:-9999px;';
+    document.body.appendChild(hidden);
+    const qrObj = new QRCode(hidden, { text: result.text, width: 256, height: 256, correctLevel: ecMap[ecSelect.value] });
 
-    new QRCode(qrcodeDiv, {
-      text: result.text,
-      width: size, height: size,
-      colorDark: fgColor.value,
-      colorLight: bgColor.value,
-      correctLevel: ecMap[ecSelect.value],
-    });
+    setTimeout(() => {
+      const qrInternal = qrObj._oQRCode;
+      document.body.removeChild(hidden);
+      if (!qrInternal) return;
 
-    placeholder.style.display = 'none';
-    qrWrap.classList.add('visible', 'animate');
-    typeBadge.textContent = result.label;
-    qrMeta.classList.add('visible');
-    dlRow.classList.add('visible');
+      /* Use qrcode.js internal API — perfectly reliable, no pixel guessing */
+      const n = qrInternal.getModuleCount();
+      const matrix = [];
+      for (let r = 0; r < n; r++) {
+        matrix[r] = [];
+        for (let c = 0; c < n; c++) {
+          matrix[r][c] = qrInternal.isDark(r, c);
+        }
+      }
+      lastQRMatrix  = matrix;
+      lastLabelText = result.label;
 
-    /* On mobile, auto-switch to preview after generating */
-    if (window.innerWidth <= 720) switchMobileTab('preview');
+      placeholder.style.display = 'none';
+      document.getElementById('type-badge').textContent = result.label;
+
+      const sec = document.getElementById('styles-section');
+      sec.style.display = 'flex';
+
+      renderStyleCards();
+      document.getElementById('dl-row').style.display = 'flex';
+      if (window.innerWidth <= 720) switchMobileTab('preview');
+    }, 50);
   }
 
-  /* ── Download PNG ── */
+  /* Draw a styled QR into a canvas. Canvas must already have .width/.height set to size. */
+  function drawStyledQR(canvas, matrix, size, style) {
+    canvas.width  = size;
+    canvas.height = size;
+    const ctx  = canvas.getContext('2d');
+    const n    = matrix.length;
+    const pad  = Math.round(size * 0.04);         /* ~4% quiet zone padding */
+    const inner = size - pad * 2;
+    const cell  = inner / n;
+
+    /* Background */
+    ctx.clearRect(0, 0, size, size);
+    roundRect(ctx, 0, 0, size, size, style.radius);
+    ctx.fillStyle = style.bg;
+    ctx.fill();
+
+    /* Gradient across the data area */
+    const grad = ctx.createLinearGradient(pad, pad, pad + inner, pad + inner);
+    grad.addColorStop(0, style.fg1);
+    grad.addColorStop(1, style.fg2);
+    ctx.fillStyle = grad;
+
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        if (!matrix[r][c]) continue;
+        const x = pad + c * cell;
+        const y = pad + r * cell;
+        const s = cell * 0.80;
+        const m = (cell - s) / 2;
+        if (style.dot === 'dot') {
+          ctx.beginPath();
+          ctx.arc(x + cell / 2, y + cell / 2, s / 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (style.dot === 'rounded') {
+          roundRect(ctx, x + m, y + m, s, s, s * 0.35);
+          ctx.fill();
+        } else {
+          ctx.fillRect(x + m, y + m, s, s);
+        }
+      }
+    }
+  }
+
+  function renderStyleCards() {
+    const strip = document.getElementById('style-strip');
+    strip.innerHTML = '';
+    STYLES.forEach(style => {
+      const thumb = document.createElement('div');
+      thumb.className = 'style-thumb' + (style.id === selectedStyleId ? ' selected' : '');
+      thumb.dataset.id = style.id;
+
+      const cv = document.createElement('canvas');
+      drawStyledQR(cv, lastQRMatrix, 72, style);
+
+      const lbl = document.createElement('div');
+      lbl.className = 'style-thumb-label';
+      lbl.textContent = style.name;
+
+      thumb.appendChild(cv);
+      thumb.appendChild(lbl);
+      thumb.addEventListener('click', () => selectStyle(style.id));
+      strip.appendChild(thumb);
+    });
+
+    /* Render main preview */
+    updateMainPreview();
+  }
+
+  function updateMainPreview() {
+    const cv = document.getElementById('qr-main-preview');
+    const style = STYLES.find(s => s.id === selectedStyleId);
+    if (!cv || !style || !lastQRMatrix) return;
+    const isMobile = window.innerWidth <= 720;
+    const size = isMobile ? Math.min(200, Math.round(window.innerWidth * 0.52)) : 240;
+    drawStyledQR(cv, lastQRMatrix, size, style);
+  }
+
+  function selectStyle(id) {
+    selectedStyleId = id;
+    document.querySelectorAll('.style-thumb').forEach(c => {
+      c.classList.toggle('selected', c.dataset.id === id);
+    });
+    updateMainPreview();
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    r = Math.min(r || 0, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath();
+  }
+
+  /* ── Download: render selected style at full size ── */
+  function getSelectedCanvas() {
+    if (!lastQRMatrix) return null;
+    const style = STYLES.find(s => s.id === selectedStyleId);
+    const sz  = 400;
+    const cv  = document.createElement('canvas');
+    drawStyledQR(cv, lastQRMatrix, sz, style);
+    /* label strip below */
+    const withLabel = document.createElement('canvas');
+    withLabel.width  = sz;
+    withLabel.height = sz + 36;
+    const ctx = withLabel.getContext('2d');
+    ctx.drawImage(cv, 0, 0);
+    ctx.fillStyle = style.labelBg;
+    ctx.fillRect(0, sz, sz, 36);
+    ctx.fillStyle = style.labelColor;
+    ctx.font = 'bold 14px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(lastLabelText, sz / 2, sz + 18);
+    return withLabel;
+  }
+
   btnDlPng.addEventListener('click', () => {
-    const canvas = qrcodeDiv.querySelector('canvas');
-    if (!canvas) return;
+    const cv = getSelectedCanvas();
+    if (!cv) return;
     const a = document.createElement('a');
-    a.download = 'qrcode.png';
-    a.href = canvas.toDataURL('image/png');
+    a.download = `qr-${selectedStyleId}.png`;
+    a.href = cv.toDataURL('image/png');
     a.click();
   });
 
+  /* ── Live dynamic background ── */
+  (function () {
+    const canvas = document.getElementById('bg-canvas');
+    const ctx    = canvas.getContext('2d');
+
+    const ORBS = [
+      { x: 0.15, y: 0.20, r: 0.55, h:  270, speed: 0.00018 }, /* violet */
+      { x: 0.82, y: 0.12, r: 0.50, h:  195, speed: 0.00022 }, /* cyan   */
+      { x: 0.55, y: 0.78, r: 0.60, h:  320, speed: 0.00015 }, /* pink   */
+      { x: 0.08, y: 0.75, r: 0.45, h:   45, speed: 0.00020 }, /* amber  */
+      { x: 0.88, y: 0.60, r: 0.48, h:  160, speed: 0.00017 }, /* green  */
+      { x: 0.50, y: 0.35, r: 0.42, h:   10, speed: 0.00019 }, /* red    */
+    ];
+    let t = 0;
+
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function draw(ts) {
+      t = ts;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#06060f';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      /* Composite with 'lighter' so overlapping orbs add up brightly */
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+
+      ORBS.forEach(o => {
+        const hue = (o.h + t * o.speed * 360) % 360;
+        const cx  = (o.x + Math.sin(t * o.speed * 1.7 + o.h) * 0.22) * canvas.width;
+        const cy  = (o.y + Math.cos(t * o.speed * 1.3 + o.h) * 0.18) * canvas.height;
+        const rad = o.r * Math.min(canvas.width, canvas.height);
+
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+        g.addColorStop(0,    `hsla(${hue}, 100%, 65%, 0.55)`);
+        g.addColorStop(0.35, `hsla(${hue}, 100%, 55%, 0.28)`);
+        g.addColorStop(0.7,  `hsla(${hue},  95%, 45%, 0.10)`);
+        g.addColorStop(1,    `hsla(${hue},  90%, 35%, 0)`);
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+        ctx.fillStyle = g;
+        ctx.fill();
+      });
+
+      ctx.restore();
+      requestAnimationFrame(draw);
+    }
+    requestAnimationFrame(draw);
+  })();
+
   /* ── Copy image ── */
   btnDlCopy.addEventListener('click', async () => {
-    const canvas = qrcodeDiv.querySelector('canvas');
-    if (!canvas) return;
+    const cv = getSelectedCanvas();
+    if (!cv) return;
     try {
-      canvas.toBlob(async blob => {
+      cv.toBlob(async blob => {
         await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
         btnDlCopy.textContent = '✓ Copied!';
         setTimeout(() => { btnDlCopy.textContent = 'Copy image'; }, 1800);
       });
     } catch {
-      /* Fallback: copy data URL as text */
-      navigator.clipboard.writeText(canvas.toDataURL('image/png'));
+      navigator.clipboard.writeText(cv.toDataURL('image/png'));
       btnDlCopy.textContent = '✓ Copied!';
       setTimeout(() => { btnDlCopy.textContent = 'Copy image'; }, 1800);
     }
