@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR Studio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #07080d;
+      --surface:  #0e1018;
+      --surface2: #141720;
+      --border:   #1e2130;
+      --border2:  #252a3a;
+      --text:     #e8eaf2;
+      --muted:    #5a6080;
+      --accent:   #6c63ff;
+      --accent2:  #a78bfa;
+    }
+
+    /* ════════════════════════════════
+       BASE (desktop-first, ≥ 721px)
+    ════════════════════════════════ */
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      font-family: 'Inter', system-ui, sans-serif;
+      color: var(--text);
+      padding: 14px 20px;
+      background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(108,99,255,0.13) 0%, transparent 70%);
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .logo { display: inline-flex; align-items: center; gap: 10px; }
+    .logo-icon {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px;
+    }
+    h1 {
+      font-size: 1.25rem; font-weight: 700; letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #fff 30%, var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .tagline { font-size: 0.8rem; color: var(--muted); }
+
+    /* ── Desktop two-column layout ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      flex: 1;
+      min-height: 0;
+      max-width: 1080px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px 22px;
+      overflow-y: auto;
+      height: 100%;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border2) transparent;
+    }
+    .card::-webkit-scrollbar { width: 5px; }
+    .card::-webkit-scrollbar-track { background: transparent; }
+    .card::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+    .output-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      height: 100%;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Mobile bottom nav — hidden on desktop */
+    .mobile-nav { display: none; }
+
+    /* ════════════════════════════════
+       MOBILE  (≤ 720px)
+    ════════════════════════════════ */
+    @media (max-width: 720px) {
+      html, body { height: 100%; overflow: hidden; }
+
+      body { padding: 0; background-image: none; flex-direction: column; }
+
+      header {
+        padding: 12px 16px 10px;
+        margin-bottom: 0;
+        flex-shrink: 0;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+      }
+      .tagline { display: none; }
+
+      /* Two full-height views stacked; only active one shows */
+      .layout {
+        display: block;
+        flex: 1;
+        min-height: 0;
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Each column fills the viewport area between header and bottom nav */
+      .card,
+      .output-card {
+        position: absolute;
+        inset: 0;
+        border-radius: 0;
+        border: none;
+        height: 100%;
+        transition: transform 0.3s cubic-bezier(.4,0,.2,1), opacity 0.25s;
+        will-change: transform;
+      }
+
+      /* Form view */
+      .card {
+        transform: translateX(0);
+        opacity: 1;
+        padding: 16px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 16px;
+      }
+      .card.mobile-hidden {
+        transform: translateX(-100%);
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* Output view */
+      .output-card {
+        transform: translateX(100%);
+        opacity: 0;
+        pointer-events: none;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .output-card.mobile-active {
+        transform: translateX(0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* Bottom nav */
+      .mobile-nav {
+        display: flex;
+        flex-shrink: 0;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        height: 62px;
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+      .mobile-nav button {
+        flex: 1;
+        background: none;
+        border: none;
+        color: var(--muted);
+        font-family: inherit;
+        font-size: 0.7rem;
+        font-weight: 500;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        cursor: pointer;
+        transition: color 0.15s;
+        position: relative;
+      }
+      .mobile-nav button .nav-icon { font-size: 1.35rem; }
+      .mobile-nav button.active { color: var(--accent2); }
+      .mobile-nav button.active::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 20%; right: 20%;
+        height: 2px;
+        background: var(--accent);
+        border-radius: 0 0 2px 2px;
+      }
+
+      /* Generate button always visible at bottom of form on mobile */
+      .btn-generate { position: sticky; bottom: 0; z-index: 2; margin-top: 12px; }
+
+      /* Tighten mode grid on mobile */
+      .mode-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+      .mode-btn { padding: 8px 4px; }
+      .mode-btn .mode-icon { font-size: 1.2rem; }
+      .mode-btn .mode-label { font-size: 0.65rem; }
+
+      /* QR output badge padding on mobile */
+      .qr-type-badge { margin-bottom: 6px; }
+
+      /* Inputs: prevent iOS zoom (font-size must be ≥ 16px) */
+      input[type="text"],
+      input[type="url"],
+      input[type="email"],
+      input[type="tel"],
+      input[type="number"],
+      input[type="password"],
+      select,
+      textarea { font-size: 16px; }
+    }
+
+    /* ════════════════════════════════
+       SHARED COMPONENT STYLES
+    ════════════════════════════════ */
+    .section-title {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+    }
+
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .mode-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 7px 4px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.18s;
+      color: var(--muted);
+      font-family: inherit;
+    }
+    .mode-btn:hover { border-color: var(--border2); color: var(--text); }
+    .mode-btn.active {
+      background: rgba(108,99,255,0.15);
+      border-color: var(--accent);
+      color: var(--accent2);
+    }
+    .mode-btn .mode-icon { font-size: 1.15rem; display: block; margin-bottom: 2px; }
+    .mode-btn .mode-label { font-size: 0.65rem; font-weight: 500; }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .field { margin-bottom: 10px; }
+    .field label {
+      display: block; font-size: 0.7rem; font-weight: 500;
+      color: var(--muted); margin-bottom: 4px; letter-spacing: 0.02em;
+    }
+
+    input[type="text"],
+    input[type="url"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="number"],
+    input[type="password"],
+    select,
+    textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--text);
+      font-size: 0.8125rem;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(108,99,255,0.12);
+    }
+    input::placeholder, textarea::placeholder { color: #2e3350; }
+    textarea { resize: vertical; min-height: 70px; }
+    select {
+      cursor: pointer; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a6080' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field-row .field { margin-bottom: 0; }
+
+    .seg-control {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 4px; background: var(--surface2);
+      border: 1px solid var(--border); border-radius: 10px; padding: 4px;
+    }
+    .seg-btn {
+      background: transparent; border: none; border-radius: 7px;
+      padding: 7px; color: var(--muted); font-size: 0.75rem;
+      font-weight: 500; cursor: pointer; transition: all 0.15s; font-family: inherit;
+    }
+    .seg-btn.active { background: var(--accent); color: #fff; }
+
+    .appear-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .color-field { display: flex; gap: 8px; align-items: center; }
+    .color-field input[type="color"] {
+      width: 36px; height: 34px; padding: 2px 3px;
+      border-radius: 8px; cursor: pointer; flex-shrink: 0;
+      background: var(--surface2); border: 1px solid var(--border);
+    }
+    .color-field input[type="text"] { flex: 1; font-family: 'Courier New', monospace; }
+
+    .btn-generate {
+      width: 100%; padding: 11px;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      color: #fff; border: none; border-radius: 12px;
+      font-size: 0.9375rem; font-weight: 600; cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+      font-family: inherit; margin-top: 4px; letter-spacing: 0.01em;
+      box-shadow: 0 4px 20px rgba(108,99,255,0.35);
+    }
+    .btn-generate:hover { opacity: 0.92; box-shadow: 0 6px 28px rgba(108,99,255,0.5); }
+    .btn-generate:active { transform: scale(0.98); }
+
+    .placeholder-state { text-align: center; color: var(--muted); }
+    .placeholder-state .ph-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.3; }
+    .placeholder-state p { font-size: 0.875rem; }
+
+    .qr-wrap {
+      background: #fff; border-radius: 16px; padding: 18px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: none;
+      max-width: min(100%, 280px);
+    }
+    .qr-wrap.visible { display: inline-flex; }
+    #qrcode canvas, #qrcode img { display: block; max-width: 100%; height: auto; }
+
+    .qr-meta { display: none; text-align: center; }
+    .qr-meta.visible { display: block; }
+    .qr-type-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(108,99,255,0.12); border: 1px solid rgba(108,99,255,0.25);
+      border-radius: 20px; padding: 5px 12px; font-size: 0.75rem;
+      color: var(--accent2); font-weight: 500; margin-bottom: 10px;
+    }
+
+    .dl-row { display: none; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .dl-row.visible { display: flex; }
+    .btn-dl {
+      padding: 10px 20px; border-radius: 10px; font-size: 0.8125rem;
+      font-weight: 500; cursor: pointer; transition: all 0.15s;
+      font-family: inherit; display: flex; align-items: center; gap: 6px;
+    }
+    .btn-dl-primary {
+      background: var(--accent); color: #fff; border: none;
+      box-shadow: 0 2px 12px rgba(108,99,255,0.3);
+    }
+    .btn-dl-primary:hover { opacity: 0.88; }
+    .btn-dl-secondary {
+      background: transparent; color: var(--text); border: 1px solid var(--border2);
+    }
+    .btn-dl-secondary:hover { background: var(--surface2); }
+
+    .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+    @keyframes popIn {
+      0% { transform: scale(0.85); opacity: 0; }
+      60% { transform: scale(1.04); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .qr-wrap.animate { animation: popIn 0.35s cubic-bezier(.34,1.56,.64,1) forwards; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⬛</div>
+    <h1>QR Studio</h1>
+  </div>
+  <p class="tagline">URLs · Wi-Fi · Payments · Contacts & more</p>
+</header>
+
+<div class="layout">
+
+  <!-- ── Form column ── -->
+  <div class="card" id="form-view">
+    <p class="section-title">QR Type</p>
+
+    <div class="mode-grid" id="mode-grid">
+      <button class="mode-btn active" data-mode="text">
+        <span class="mode-icon">📝</span><span class="mode-label">Text / URL</span>
+      </button>
+      <button class="mode-btn" data-mode="wifi">
+        <span class="mode-icon">📶</span><span class="mode-label">Wi-Fi</span>
+      </button>
+      <button class="mode-btn" data-mode="payment">
+        <span class="mode-icon">💳</span><span class="mode-label">Payment</span>
+      </button>
+      <button class="mode-btn" data-mode="email">
+        <span class="mode-icon">✉️</span><span class="mode-label">Email</span>
+      </button>
+      <button class="mode-btn" data-mode="sms">
+        <span class="mode-icon">💬</span><span class="mode-label">SMS</span>
+      </button>
+      <button class="mode-btn" data-mode="vcard">
+        <span class="mode-icon">👤</span><span class="mode-label">Contact</span>
+      </button>
+    </div>
+
+    <!-- TEXT / URL -->
+    <div class="panel active" id="panel-text">
+      <div class="field">
+        <label>Text or URL</label>
+        <textarea id="text-input" placeholder="https://example.com or any text…" maxlength="2000"></textarea>
+      </div>
+    </div>
+
+    <!-- WI-FI -->
+    <div class="panel" id="panel-wifi">
+      <div class="field">
+        <label>Network Name (SSID)</label>
+        <input type="text" id="wifi-ssid" placeholder="MyHomeNetwork" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="wifi-pass" placeholder="••••••••" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Security Type</label>
+        <div class="seg-control" id="wifi-sec">
+          <button class="seg-btn active" data-val="WPA">WPA/WPA2</button>
+          <button class="seg-btn" data-val="WEP">WEP</button>
+          <button class="seg-btn" data-val="nopass">None</button>
+        </div>
+      </div>
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="wifi-hidden" style="width:auto;accent-color:var(--accent);" />
+          Hidden network
+        </label>
+      </div>
+    </div>
+
+    <!-- PAYMENT -->
+    <div class="panel" id="panel-payment">
+      <div class="field">
+        <label>Payment Type</label>
+        <select id="pay-type">
+          <option value="upi">UPI (India)</option>
+          <option value="paypal">PayPal.me link</option>
+          <option value="btc">Bitcoin</option>
+          <option value="eth">Ethereum</option>
+          <option value="url">Other payment URL</option>
+        </select>
+      </div>
+      <div id="pay-upi-fields">
+        <div class="field">
+          <label>UPI ID</label>
+          <input type="text" id="upi-id" placeholder="name@upi" />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Amount (₹)</label>
+            <input type="number" id="upi-amount" placeholder="0.00" min="0" step="0.01" />
+          </div>
+          <div class="field">
+            <label>Note</label>
+            <input type="text" id="upi-note" placeholder="Optional" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Payee Name</label>
+          <input type="text" id="upi-name" placeholder="John Doe" />
+        </div>
+      </div>
+      <div id="pay-other-fields" style="display:none;">
+        <div class="field">
+          <label>Payment URL / Address</label>
+          <input type="text" id="pay-url" placeholder="Wallet address or payment link" />
+        </div>
+        <div class="field" id="pay-amount-field" style="display:none;">
+          <label>Amount</label>
+          <input type="text" id="pay-amount" placeholder="0.00" />
+        </div>
+      </div>
+    </div>
+
+    <!-- EMAIL -->
+    <div class="panel" id="panel-email">
+      <div class="field">
+        <label>To</label>
+        <input type="email" id="email-to" placeholder="recipient@example.com" />
+      </div>
+      <div class="field">
+        <label>Subject</label>
+        <input type="text" id="email-subject" placeholder="Hello!" />
+      </div>
+      <div class="field">
+        <label>Body</label>
+        <textarea id="email-body" placeholder="Your message…" style="min-height:56px;"></textarea>
+      </div>
+    </div>
+
+    <!-- SMS -->
+    <div class="panel" id="panel-sms">
+      <div class="field">
+        <label>Phone Number</label>
+        <input type="tel" id="sms-phone" placeholder="+1 555 000 0000" />
+      </div>
+      <div class="field">
+        <label>Message</label>
+        <textarea id="sms-message" placeholder="Your message…" style="min-height:56px;"></textarea>
+      </div>
+    </div>
+
+    <!-- VCARD -->
+    <div class="panel" id="panel-vcard">
+      <div class="field-row">
+        <div class="field">
+          <label>First Name</label>
+          <input type="text" id="vc-first" placeholder="Jane" />
+        </div>
+        <div class="field">
+          <label>Last Name</label>
+          <input type="text" id="vc-last" placeholder="Doe" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Phone</label>
+        <input type="tel" id="vc-phone" placeholder="+1 555 000 0000" />
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="vc-email" placeholder="jane@example.com" />
+      </div>
+      <div class="field">
+        <label>Organization</label>
+        <input type="text" id="vc-org" placeholder="Acme Corp" />
+      </div>
+      <div class="field">
+        <label>Website</label>
+        <input type="url" id="vc-url" placeholder="https://example.com" />
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <p class="section-title">Appearance</p>
+    <div class="appear-grid">
+      <div class="field" style="margin-bottom:0;">
+        <label>Size</label>
+        <select id="size-select">
+          <option value="160">Small</option>
+          <option value="220" selected>Medium</option>
+          <option value="300">Large</option>
+          <option value="400">XL</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Error Correction</label>
+        <select id="ec-select">
+          <option value="L">Low (L)</option>
+          <option value="M" selected>Medium (M)</option>
+          <option value="Q">Quartile (Q)</option>
+          <option value="H">High (H)</option>
+        </select>
+      </div>
+    </div>
+    <div class="appear-grid" style="margin-top:10px;">
+      <div class="field" style="margin-bottom:0;">
+        <label>Foreground</label>
+        <div class="color-field">
+          <input type="color" id="fg-color" value="#000000" />
+          <input type="text" id="fg-hex" value="#000000" maxlength="7" />
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Background</label>
+        <div class="color-field">
+          <input type="color" id="bg-color" value="#ffffff" />
+          <input type="text" id="bg-hex" value="#ffffff" maxlength="7" />
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-generate" id="btn-generate">Generate QR Code</button>
+  </div>
+
+  <!-- ── Output column ── -->
+  <div class="output-card" id="output-view">
+    <div class="placeholder-state" id="placeholder">
+      <div class="ph-icon">⬜</div>
+      <p>Your QR code will<br/>appear here</p>
+    </div>
+
+    <div class="qr-wrap" id="qr-wrap">
+      <div id="qrcode"></div>
+    </div>
+
+    <div class="qr-meta" id="qr-meta">
+      <div class="qr-type-badge" id="type-badge">📝 Text / URL</div>
+    </div>
+
+    <div class="dl-row" id="dl-row">
+      <button class="btn-dl btn-dl-primary" id="btn-dl-png">⬇ Download PNG</button>
+      <button class="btn-dl btn-dl-secondary" id="btn-dl-copy">Copy image</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Mobile bottom nav (hidden on desktop via CSS) -->
+<nav class="mobile-nav" id="mobile-nav">
+  <button class="active" id="nav-form">
+    <span class="nav-icon">✏️</span>
+    <span>Form</span>
+  </button>
+  <button id="nav-preview">
+    <span class="nav-icon">⬜</span>
+    <span>Preview</span>
+  </button>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  let currentMode = 'text';
+  let wifiSecurity = 'WPA';
+  let mobileTab = 'form'; // 'form' | 'preview'
+
+  const modeGrid   = document.getElementById('mode-grid');
+  const btnGen     = document.getElementById('btn-generate');
+  const placeholder= document.getElementById('placeholder');
+  const qrWrap     = document.getElementById('qr-wrap');
+  const qrcodeDiv  = document.getElementById('qrcode');
+  const qrMeta     = document.getElementById('qr-meta');
+  const typeBadge  = document.getElementById('type-badge');
+  const dlRow      = document.getElementById('dl-row');
+  const btnDlPng   = document.getElementById('btn-dl-png');
+  const btnDlCopy  = document.getElementById('btn-dl-copy');
+  const fgColor    = document.getElementById('fg-color');
+  const fgHex      = document.getElementById('fg-hex');
+  const bgColor    = document.getElementById('bg-color');
+  const bgHex      = document.getElementById('bg-hex');
+  const sizeSelect = document.getElementById('size-select');
+  const ecSelect   = document.getElementById('ec-select');
+  const payType    = document.getElementById('pay-type');
+  const formView   = document.getElementById('form-view');
+  const outputView = document.getElementById('output-view');
+  const navForm    = document.getElementById('nav-form');
+  const navPreview = document.getElementById('nav-preview');
+
+  /* ── Mobile tab switching ── */
+  function switchMobileTab(tab) {
+    mobileTab = tab;
+    if (tab === 'form') {
+      formView.classList.remove('mobile-hidden');
+      outputView.classList.remove('mobile-active');
+      navForm.classList.add('active');
+      navPreview.classList.remove('active');
+    } else {
+      formView.classList.add('mobile-hidden');
+      outputView.classList.add('mobile-active');
+      navForm.classList.remove('active');
+      navPreview.classList.add('active');
+    }
+  }
+  navForm.addEventListener('click', () => switchMobileTab('form'));
+  navPreview.addEventListener('click', () => switchMobileTab('preview'));
+
+  /* ── Mode switching ── */
+  modeGrid.addEventListener('click', e => {
+    const btn = e.target.closest('.mode-btn');
+    if (!btn) return;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    currentMode = btn.dataset.mode;
+    document.getElementById('panel-' + currentMode).classList.add('active');
+  });
+
+  /* ── Wi-Fi security ── */
+  document.getElementById('wifi-sec').addEventListener('click', e => {
+    const btn = e.target.closest('.seg-btn');
+    if (!btn) return;
+    document.querySelectorAll('#wifi-sec .seg-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    wifiSecurity = btn.dataset.val;
+    const passEl = document.getElementById('wifi-pass');
+    passEl.disabled = wifiSecurity === 'nopass';
+    passEl.style.opacity = wifiSecurity === 'nopass' ? '0.4' : '1';
+  });
+
+  /* ── Payment type ── */
+  payType.addEventListener('change', () => {
+    const val = payType.value;
+    const upiFields   = document.getElementById('pay-upi-fields');
+    const otherFields = document.getElementById('pay-other-fields');
+    const amtField    = document.getElementById('pay-amount-field');
+    if (val === 'upi') {
+      upiFields.style.display = 'block';
+      otherFields.style.display = 'none';
+    } else {
+      upiFields.style.display = 'none';
+      otherFields.style.display = 'block';
+      amtField.style.display = (val === 'btc' || val === 'eth') ? 'block' : 'none';
+      const ph = { paypal: 'https://paypal.me/username', btc: 'Bitcoin wallet address', eth: 'Ethereum wallet address', url: 'https://pay.example.com' };
+      document.getElementById('pay-url').placeholder = ph[val] || '';
+    }
+  });
+
+  /* ── Color sync ── */
+  fgColor.addEventListener('input', () => { fgHex.value = fgColor.value; });
+  bgColor.addEventListener('input', () => { bgHex.value = bgColor.value; });
+  fgHex.addEventListener('input', () => { if (/^#[0-9a-fA-F]{6}$/.test(fgHex.value)) fgColor.value = fgHex.value; });
+  bgHex.addEventListener('input', () => { if (/^#[0-9a-fA-F]{6}$/.test(bgHex.value)) bgColor.value = bgHex.value; });
+
+  /* ── Build QR payload ── */
+  function buildQRString() {
+    switch (currentMode) {
+      case 'text': {
+        const t = document.getElementById('text-input').value.trim();
+        return t ? { text: t, label: '📝 Text / URL' } : null;
+      }
+      case 'wifi': {
+        const ssid = document.getElementById('wifi-ssid').value;
+        if (!ssid) return null;
+        const pass   = document.getElementById('wifi-pass').value;
+        const hidden = document.getElementById('wifi-hidden').checked ? 'true' : 'false';
+        return { text: `WIFI:T:${wifiSecurity};S:${ssid};P:${pass};H:${hidden};;`, label: '📶 Wi-Fi' };
+      }
+      case 'payment': {
+        const type = payType.value;
+        if (type === 'upi') {
+          const id = document.getElementById('upi-id').value.trim();
+          if (!id) return null;
+          let text = `upi://pay?pa=${encodeURIComponent(id)}`;
+          const name = document.getElementById('upi-name').value;
+          const amt  = document.getElementById('upi-amount').value;
+          const note = document.getElementById('upi-note').value;
+          if (name) text += `&pn=${encodeURIComponent(name)}`;
+          if (amt)  text += `&am=${amt}`;
+          if (note) text += `&tn=${encodeURIComponent(note)}`;
+          return { text, label: '💳 UPI Payment' };
+        }
+        if (type === 'btc') {
+          const addr = document.getElementById('pay-url').value.trim();
+          if (!addr) return null;
+          const amt = document.getElementById('pay-amount').value;
+          return { text: `bitcoin:${addr}${amt ? '?amount=' + amt : ''}`, label: '₿ Bitcoin' };
+        }
+        if (type === 'eth') {
+          const addr = document.getElementById('pay-url').value.trim();
+          if (!addr) return null;
+          const amt = document.getElementById('pay-amount').value;
+          return { text: `ethereum:${addr}${amt ? '?value=' + amt : ''}`, label: '⬡ Ethereum' };
+        }
+        const url = document.getElementById('pay-url').value.trim();
+        return url ? { text: url, label: type === 'paypal' ? '💳 PayPal' : '💳 Payment' } : null;
+      }
+      case 'email': {
+        const to = document.getElementById('email-to').value.trim();
+        if (!to) return null;
+        const sub  = document.getElementById('email-subject').value;
+        const body = document.getElementById('email-body').value;
+        const parts = [];
+        if (sub)  parts.push('subject=' + encodeURIComponent(sub));
+        if (body) parts.push('body=' + encodeURIComponent(body));
+        return { text: `mailto:${to}${parts.length ? '?' + parts.join('&') : ''}`, label: '✉️ Email' };
+      }
+      case 'sms': {
+        const phone = document.getElementById('sms-phone').value.trim();
+        if (!phone) return null;
+        const msg = document.getElementById('sms-message').value;
+        return { text: `sms:${phone}${msg ? '?body=' + encodeURIComponent(msg) : ''}`, label: '💬 SMS' };
+      }
+      case 'vcard': {
+        const first = document.getElementById('vc-first').value;
+        const last  = document.getElementById('vc-last').value;
+        if (!first && !last) return null;
+        let text = `BEGIN:VCARD\nVERSION:3.0\nN:${last};${first}\nFN:${first} ${last}`;
+        const phone = document.getElementById('vc-phone').value;
+        const email = document.getElementById('vc-email').value;
+        const org   = document.getElementById('vc-org').value;
+        const url   = document.getElementById('vc-url').value;
+        if (phone) text += `\nTEL:${phone}`;
+        if (email) text += `\nEMAIL:${email}`;
+        if (org)   text += `\nORG:${org}`;
+        if (url)   text += `\nURL:${url}`;
+        return { text: text + '\nEND:VCARD', label: '👤 Contact' };
+      }
+    }
+    return null;
+  }
+
+  /* ── Generate ── */
+  btnGen.addEventListener('click', generate);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) generate();
+  });
+
+  function generate() {
+    const result = buildQRString();
+    if (!result) {
+      const orig = btnGen.textContent;
+      btnGen.textContent = '⚠ Fill in the required fields';
+      setTimeout(() => { btnGen.textContent = orig; }, 2000);
+      return;
+    }
+
+    const size = parseInt(sizeSelect.value, 10);
+    const ecMap = { L: QRCode.CorrectLevel.L, M: QRCode.CorrectLevel.M, Q: QRCode.CorrectLevel.Q, H: QRCode.CorrectLevel.H };
+
+    qrcodeDiv.innerHTML = '';
+    qrWrap.classList.remove('animate');
+
+    new QRCode(qrcodeDiv, {
+      text: result.text,
+      width: size, height: size,
+      colorDark: fgColor.value,
+      colorLight: bgColor.value,
+      correctLevel: ecMap[ecSelect.value],
+    });
+
+    placeholder.style.display = 'none';
+    qrWrap.classList.add('visible', 'animate');
+    typeBadge.textContent = result.label;
+    qrMeta.classList.add('visible');
+    dlRow.classList.add('visible');
+
+    /* On mobile, auto-switch to preview after generating */
+    if (window.innerWidth <= 720) switchMobileTab('preview');
+  }
+
+  /* ── Download PNG ── */
+  btnDlPng.addEventListener('click', () => {
+    const canvas = qrcodeDiv.querySelector('canvas');
+    if (!canvas) return;
+    const a = document.createElement('a');
+    a.download = 'qrcode.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  });
+
+  /* ── Copy image ── */
+  btnDlCopy.addEventListener('click', async () => {
+    const canvas = qrcodeDiv.querySelector('canvas');
+    if (!canvas) return;
+    try {
+      canvas.toBlob(async blob => {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        btnDlCopy.textContent = '✓ Copied!';
+        setTimeout(() => { btnDlCopy.textContent = 'Copy image'; }, 1800);
+      });
+    } catch {
+      /* Fallback: copy data URL as text */
+      navigator.clipboard.writeText(canvas.toDataURL('image/png'));
+      btnDlCopy.textContent = '✓ Copied!';
+      setTimeout(() => { btnDlCopy.textContent = 'Copy image'; }, 1800);
+    }
+  });
+</script>
+</body>
+</html>
